@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, sans-serif;
+            background: #f1f5f9;
+        }
+        .card {
+            width: 100%;
+            max-width: 360px;
+            margin: 16px;
+            padding: 32px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+        h1 { margin: 0 0 24px; font-size: 24px; text-align: center; }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover { background: #1d4ed8; }
+        .switch { margin-top: 16px; text-align: center; font-size: 14px; }
+        .switch a { color: #2563eb; cursor: pointer; }
+        #status { min-height: 20px; margin: 12px 0 0; font-size: 14px; text-align: center; }
+        .error { color: #dc2626; }
+        .ok { color: #16a34a; }
+        [hidden] { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 id="title">Login</h1>
+
+        <form id="loginForm">
+            <input id="loginEmail" type="email" placeholder="email" required>
+            <input id="loginPassword" type="password" placeholder="password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <form id="registerForm" hidden>
+            <input id="regName" placeholder="name" required>
+            <input id="regEmail" type="email" placeholder="email" required>
+            <input id="regPassword" type="password" placeholder="password" required>
+            <button type="submit">Register</button>
+        </form>
+
+        <p id="status"></p>
+        <p class="switch" id="toRegister">No account? <a>Register</a></p>
+        <p class="switch" id="toLogin" hidden>Already have an account? <a>Login</a></p>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const status = document.getElementById('status');
+
+        const showStatus = (text, ok) => {
+            status.textContent = text;
+            status.className = ok ? 'ok' : 'error';
+        };
+
+        const showRegister = (register) => {
+            loginForm.hidden = register;
+            registerForm.hidden = !register;
+            document.getElementById('toRegister').hidden = register;
+            document.getElementById('toLogin').hidden = !register;
+            document.getElementById('title').textContent = register ? 'Register' : 'Login';
+            showStatus('', true);
+        };
+
+        document.querySelector('#toRegister a').onclick = () => showRegister(true);
+        document.querySelector('#toLogin a').onclick = () => showRegister(false);
+
+        // already logged in in this tab: go straight to the users page
+        if (sessionStorage.getItem('user')) {
+            location.href = '/test.html';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value,
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                showStatus(result.message, false);
+                return;
+            }
+            sessionStorage.setItem('user', JSON.stringify(result));
+            location.href = '/test.html';
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('regEmail').value;
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('regName').value,
+                    email,
+                    password: document.getElementById('regPassword').value,
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                showStatus('Register failed: ' + result.message, false);
+                return;
+            }
+            registerForm.reset();
+            showRegister(false);
+            document.getElementById('loginEmail').value = email;
+            showStatus('Registered! Please log in.', true);
+        });
+    </script>
+</body>
+</html>

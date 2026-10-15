@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import User from './User';
 
 // create
 export const createUser = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;
-        const newUser = new User({ name, email, password });
+        if (!password) {
+            res.status(400).json({ message: 'Password is required' });
+            return;
+        }
+        // store only a hash so the real password never sits in the database
+        const hashed = await bcrypt.hash(password, 10);
+        const newUser = new User({ name, email, password: hashed });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
@@ -57,6 +64,10 @@ export const updateUser = async (req: Request, res: Response) => {
     const updateData = req.body;
 
     try {
+        if (updateData.password) {
+            updateData.password = await bcrypt.hash(updateData.password, 10);
+        }
+
         const updatedUser = await User.findByIdAndUpdate(id, updateData, {
             new: true,           // resend update data
             runValidators: true, // checking schema
@@ -70,5 +81,21 @@ export const updateUser = async (req: Request, res: Response) => {
         res.status(200).json(updatedUser);
     } catch (error) {
         res.status(500).json({ message: 'Error updating user', error });
+    }
+};
+
+// login
+export const login = async (req: Request, res: Response) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        // same message for unknown email and wrong password so emails can't be probed
+        if (!user || !password || !(await bcrypt.compare(password, user.password))) {
+            res.status(401).json({ message: 'Invalid email or password' });
+            return;
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Error logging in', error });
     }
 };

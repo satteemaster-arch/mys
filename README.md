@@ -10,8 +10,9 @@ npm ci
 npm run dev            # http://localhost:3000
 ```
 
-- `GET /` – hello world
+- `GET /` – login page (register, then log in to reach `/test.html`)
 - `GET /host` – hostname of the server that answered
+- `POST /api/login` – check email + password (passwords are stored as bcrypt hashes)
 - `/api/users` – CRUD (`GET`, `POST`, `GET /:id`, `PUT /:id`, `DELETE /:id`)
 - `/test.html` – front end for adding, listing and deleting users
 

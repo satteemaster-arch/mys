@@ -5,6 +5,8 @@
     <title>Users</title>
 </head>
 <body>
+    <p>Logged in as <b id="me"></b> <button id="logout">Logout</button></p>
+
     <h1>Add New User</h1>
     <form id="userForm">
         <input id="name" placeholder="name" required>
@@ -18,6 +20,18 @@
     <ul id="users"></ul>
 
     <script>
+        // Not logged in: back to the login page
+        const me = JSON.parse(sessionStorage.getItem('user') || 'null');
+        if (!me) {
+            location.replace('/');
+        } else {
+            document.getElementById('me').textContent = `${me.name} (${me.email})`;
+        }
+        document.getElementById('logout').onclick = () => {
+            sessionStorage.removeItem('user');
+            location.href = '/';
+        };
+
         const loadUsers = async () => {
             const response = await fetch('/api/users');
             const users = await response.json();

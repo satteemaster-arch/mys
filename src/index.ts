@@ -14,10 +14,12 @@ const mongoUri = process.env.MONGO_URI;
 app.use(express.json());
 app.use(cors());
 // src/public works both from ts-node (src/) and from the compiled build (dist/)
-app.use(express.static(path.join(__dirname, '..', 'src', 'public')));
+const publicDir = path.join(__dirname, '..', 'src', 'public');
+app.use(express.static(publicDir));
 
+// The home page is the login form
 app.get('/', (req: Request, res: Response) => {
-    res.send('Hello, World!');
+    res.sendFile(path.join(publicDir, 'login.html'));
 });
 
 // Shows which container answered, to see nginx spreading requests across the web servers
