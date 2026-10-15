@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Users</title>
+</head>
+<body>
+    <h1>Add New User</h1>
+    <form id="userForm">
+        <input id="name" placeholder="name" required>
+        <input id="email" type="email" placeholder="email" required>
+        <input id="password" type="password" placeholder="password" required>
+        <button type="submit">Add</button>
+    </form>
+    <p id="status"></p>
+
+    <h2>Users</h2>
+    <ul id="users"></ul>
+
+    <script>
+        const loadUsers = async () => {
+            const response = await fetch('/api/users');
+            const users = await response.json();
+            const list = document.getElementById('users');
+            list.innerHTML = '';
+            users.forEach(u => {
+                const li = document.createElement('li');
+                li.textContent = `${u.name} (${u.email}) `;
+                const del = document.createElement('button');
+                del.textContent = 'Delete';
+                del.onclick = async () => {
+                    await fetch(`/api/users/${u._id}`, { method: 'DELETE' });
+                    loadUsers();
+                };
+                li.appendChild(del);
+                list.appendChild(li);
+            });
+        };
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                })
+            });
+            const result = await response.json();
+            document.getElementById('status').textContent = response.ok
+                ? 'User added successfully!'
+                : 'Failed to add user: ' + result.message;
+            loadUsers();
+        });
+
+        loadUsers();
+    </script>
+</body>
+</html>
