@@ -1,7 +1,7 @@
 # CI/CD: every push to main runs the unit tests, pushes the image to Docker Hub,
 # then rolls the Azure Container App onto the new image.
 # Needs secrets DOCKER_USERNAME, DOCKER_PASSWORD, AZURE_CREDENTIALS
-# and variables AZURE_RESOURCE_GROUP, AZURE_CONTAINER_APP (deploy is skipped until they are set)
+# and variables AZURE_RESOURCE_GROUP, AZURE_CONTAINER_APP (deploy is skipped until all Azure settings are in place)
 name: CI/CD
 
 on:
@@ -51,13 +51,22 @@ jobs:
     needs: docker
     if: vars.AZURE_CONTAINER_APP != ''
     runs-on: ubuntu-latest
+    env:
+      # secrets cannot be used in an `if`, so expose only whether one is set
+      HAS_AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS != '' }}
     steps:
+      - name: Skip when AZURE_CREDENTIALS is missing
+        if: env.HAS_AZURE_CREDENTIALS != 'true'
+        run: echo "::notice::AZURE_CREDENTIALS secret is not set; skipping Azure deploy"
+
       - name: Log in to Azure
+        if: env.HAS_AZURE_CREDENTIALS == 'true'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Update container app image
+        if: env.HAS_AZURE_CREDENTIALS == 'true'
         run: |
           az extension add --name containerapp --upgrade --only-show-errors
           az containerapp update \

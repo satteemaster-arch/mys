@@ -11,5 +11,5 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Print text from dist/index.js
-        run: cat dist/index.js
+      - name: Print text from src/index.ts
+        run: cat src/index.ts
