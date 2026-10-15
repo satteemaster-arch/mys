@@ -1,0 +1,28 @@
+# Multi web server: three copies of the app behind an nginx load balancer
+# Run: docker compose up --build   then open http://localhost:8080
+services:
+  web1:
+    build: .
+    hostname: web1
+    env_file: .env
+
+  web2:
+    build: .
+    hostname: web2
+    env_file: .env
+
+  web3:
+    build: .
+    hostname: web3
+    env_file: .env
+
+  nginx:
+    image: nginx:1.27
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web1
+      - web2
+      - web3

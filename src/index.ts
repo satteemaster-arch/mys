@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
+import os from 'os';
 import userRoutes from './UserRoutes';
 
 const app = express();
@@ -17,6 +18,11 @@ app.use(express.static(path.join(__dirname, '..', 'src', 'public')));
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello, World!');
+});
+
+// Shows which container answered, to see nginx spreading requests across the web servers
+app.get('/host', (req: Request, res: Response) => {
+    res.json({ host: os.hostname() });
 });
 
 // Routes
