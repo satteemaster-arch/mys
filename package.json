@@ -1,7 +1,7 @@
 {
   "name": "mys",
   "version": "1.0.0",
-  "description": "��#\u0000 \u0000m\u0000y\u0000s\u0000\r\u0000 \u0000",
+  "description": "Express + TypeScript user API on MongoDB Atlas, shipped with Docker, nginx and GitHub Actions",
   "main": "index.js",
   "scripts": {
     "test": "npm run build --silent && node dist/Test1.js",
