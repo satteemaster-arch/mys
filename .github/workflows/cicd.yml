@@ -1,0 +1,66 @@
+# CI/CD: every push to main runs the unit tests, pushes the image to Docker Hub,
+# then rolls the Azure Container App onto the new image.
+# Needs secrets DOCKER_USERNAME, DOCKER_PASSWORD, AZURE_CREDENTIALS
+# and variables AZURE_RESOURCE_GROUP, AZURE_CONTAINER_APP (deploy is skipped until they are set)
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm test
+
+  docker:
+    name: Push image to Docker Hub
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mys:latest
+            ${{ secrets.DOCKER_USERNAME }}/mys:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Azure Container App
+    needs: docker
+    if: vars.AZURE_CONTAINER_APP != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update container app image
+        run: |
+          az extension add --name containerapp --upgrade --only-show-errors
+          az containerapp update \
+            --name "${{ vars.AZURE_CONTAINER_APP }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --image "docker.io/${{ secrets.DOCKER_USERNAME }}/mys:${{ github.sha }}"

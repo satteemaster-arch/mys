@@ -35,3 +35,18 @@ Refresh `http://localhost:8080/host` a few times to see requests rotate across t
 
 `publish_docker_image.yml` builds the image and pushes it to Docker Hub as `<DOCKER_USERNAME>/mys` whenever a GitHub release is published.
 It needs the repository secrets `DOCKER_USERNAME` and `DOCKER_PASSWORD` (a Docker Hub access token).
+
+## CI/CD
+
+`cicd.yml` runs on every push to `main`:
+
+1. **Unit test** – `npm test`
+2. **Push image to Docker Hub** – tags `<DOCKER_USERNAME>/mys:latest` and `:<commit sha>`
+3. **Deploy to Azure Container App** – points the container app at the new image
+
+The deploy job is skipped until these are set in the repository settings:
+
+- Secret `AZURE_CREDENTIALS` – output of `az ad sp create-for-rbac --name mys-deploy --role contributor --scopes /subscriptions/<id>/resourceGroups/<rg> --json-auth`
+- Variables `AZURE_RESOURCE_GROUP` and `AZURE_CONTAINER_APP`
+
+The container app itself needs ingress on port 3000 and the `MONGO_URI` environment variable.
